@@ -34,29 +34,21 @@
 </head>
 <body>
 
-    <!-- 1. የአድሚን ሎጊን -->
+    <!-- 1. የአድሚን መግቢያ -->
     <div id="adminLoginView" class="card">
         <h2>የአድሚን መግቢያ</h2>
         <input type="text" id="adminUser" placeholder="የአድሚን ስም">
         <input type="password" id="adminPass" placeholder="ፓስወርድ">
-        <button onclick="adminStep1()">1. ሎጊን በል</button>
-        
-        <div id="2faSection" class="hidden">
-            <hr style="border-color:#455a64;">
-            <p style="font-size: 13px;">የ 6 ዲጂት ኮድ ወደ ኢሜይልዎ ተልኳል፡</p>
-            <input type="text" id="otpInput" placeholder="6-digit OTP">
-            <button onclick="adminVerify2FA()">2. አረጋግጥና ግባ</button>
-        </div>
+        <button onclick="adminLogin()">ሎጊን በል</button>
 
-        <span class="link" onclick="forgotPassword()">Forgot Password? (ፓስወርድ ረሳሁ)</span><br>
+        <span class="link" onclick="showView('forgotPassView')">Forgot Password? (ፓስወርድ ረሳሁ)</span><br>
         <span class="link" onclick="showView('userLoginView')">ወደ ተጫዋች ገጽ ሂድ</span>
     </div>
 
     <!-- 2. FORGOT PASSWORD -->
     <div id="forgotPassView" class="card hidden">
         <h2>ፓስወርድ መቀየሪያ</h2>
-        <p style="font-size: 13px;">ወደ ኢሜይልዎ የተላከውን ኮድ እና አዲሱን ፓስወርድ ያስገቡ፡</p>
-        <input type="text" id="resetOtp" placeholder="6-digit OTP">
+        <p style="font-size: 13px;">አዲስ የአድሚን ፓስወርድ ያስገቡ፡</p>
         <input type="password" id="newPass" placeholder="አዲስ ፓስወርድ">
         <button onclick="resetPassword()">ፓስወርድ ቀይር</button>
         <span class="link" onclick="showView('adminLoginView')">ተመለስ</span>
@@ -112,76 +104,81 @@
             document.getElementById(viewId).classList.remove('hidden');
         }
 
-        async function adminStep1() {
+        async function adminLogin() {
             const u = document.getElementById('adminUser').value;
             const p = document.getElementById('adminPass').value;
-            const res = await fetch(`${API}/admin/login-step1`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: u, password: p })
-            });
-            const data = await res.json();
-            alert(data.message);
-            if (data.success) document.getElementById('2faSection').classList.remove('hidden');
-        }
-
-        async function adminVerify2FA() {
-            const otp = document.getElementById('otpInput').value;
-            const res = await fetch(`${API}/admin/verify-2fa`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ otp })
-            });
-            const data = await res.json();
-            alert(data.message);
-            if (data.success) showView('adminDashboardView');
-        }
-
-        async function forgotPassword() {
-            const res = await fetch(`${API}/admin/forgot-password`, { method: 'POST' });
-            const data = await res.json();
-            alert(data.message);
-            if (data.success) showView('forgotPassView');
+            try {
+                const res = await fetch(`${API}/admin/login-step1`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    showView('adminDashboardView');
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert("ከሰርቨሩ ጋር መገናኘት አልተቻለም! እባክዎ ትንሽ ቆይተው ይሞክሩ።");
+            }
         }
 
         async function resetPassword() {
-            const otp = document.getElementById('resetOtp').value;
             const newPassword = document.getElementById('newPass').value;
-            const res = await fetch(`${API}/admin/reset-password`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ otp, newPassword })
-            });
-            const data = await res.json();
-            alert(data.message);
-            if (data.success) showView('adminLoginView');
+            if (!newPassword) {
+                alert("እባክዎን አዲስ ፓስወርድ ያስገቡ!");
+                return;
+            }
+            try {
+                const res = await fetch(`${API}/admin/reset-password`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ newPassword })
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.success) showView('adminLoginView');
+            } catch (err) {
+                alert("ችግር ተፈጥሯል! እባክዎ ድጋሚ ይሞክሩ።");
+            }
         }
 
         async function createPlayer() {
             const u = document.getElementById('newPlayerUser').value;
             const p = document.getElementById('newPlayerPass').value;
-            const res = await fetch(`${API}/admin/create-user`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: u, password: p })
-            });
-            const data = await res.json();
-            alert(data.message);
-            if (data.success) {
-                document.getElementById('newPlayerUser').value = '';
-                document.getElementById('newPlayerPass').value = '';
+            try {
+                const res = await fetch(`${API}/admin/create-user`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.success) {
+                    document.getElementById('newPlayerUser').value = '';
+                    document.getElementById('newPlayerPass').value = '';
+                }
+            } catch (err) {
+                alert("ተጫዋች መፍጠር አልተቻለም!");
             }
         }
 
         async function playerLogin() {
             const u = document.getElementById('playerUser').value;
             const p = document.getElementById('playerPass').value;
-            const res = await fetch(`${API}/user/login`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: u, password: p })
-            });
-            const data = await res.json();
-            if (data.success) {
-                document.getElementById('welcomePlayer').innerText = "እንኳን ደህና መጣህ፣ " + data.username;
-                showView('gameView');
-            } else {
-                alert(data.message);
+            try {
+                const res = await fetch(`${API}/user/login`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('welcomePlayer').innerText = "እንኳን ደህና መጣህ፣ " + data.username;
+                    showView('gameView');
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert("መግባት አልተቻለም!");
             }
         }
 
@@ -192,30 +189,33 @@
             const wheel = document.getElementById('wheel');
             const resultBox = document.getElementById('gameResult');
 
-            // የእሽክርክሪት አኒሜሽን ማስነሳት
             wheel.classList.add('spinning');
             resultBox.classList.add('hidden');
 
-            const res = await fetch(`${API}/game/spin`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ entryFee: fee, playerCount: count, cutPercentage: cut })
-            });
-            const data = await res.json();
+            try {
+                const res = await fetch(`${API}/game/spin`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ entryFee: fee, playerCount: count, cutPercentage: cut })
+                });
+                const data = await res.json();
 
-            // ከ 3 ሴኮንድ አኒሜሽን በኋላ አሸናፊውን ማሳየት
-            setTimeout(() => {
+                setTimeout(() => {
+                    wheel.classList.remove('spinning');
+                    if (data.success) {
+                        wheel.innerText = data.winningNumber;
+                        resultBox.classList.remove('hidden');
+                        resultBox.innerHTML = `
+                            🎯 <b>አሸናፊ ቁጥር፡</b> <span style="color:#f1c40f; font-size:18px;">${data.winningNumber}</span><br>
+                            💰 <b>ጠቅላላ የተሰበሰበ፡</b> ${data.totalPool} ብር<br>
+                            ✂️ <b>የአጫዋች ቅናሽ (${cut}%)፡</b> ${data.houseCut} ብር<br>
+                            🏆 <b>ለአሸናፊው የሚሰጥ፡</b> <b style="color:#2ecc71; font-size:16px;">${data.netPrize} ብር</b>
+                        `;
+                    }
+                }, 3000);
+            } catch (err) {
                 wheel.classList.remove('spinning');
-                if (data.success) {
-                    wheel.innerText = data.winningNumber;
-                    resultBox.classList.remove('hidden');
-                    resultBox.innerHTML = `
-                        🎯 <b>አሸናፊ ቁጥር፡</b> <span style="color:#f1c40f; font-size:18px;">${data.winningNumber}</span><br>
-                        💰 <b>ጠቅላላ የተሰበሰበ፡</b> ${data.totalPool} ብር<br>
-                        ✂️ <b>የአጫዋች ቅናሽ (${cut}%)፡</b> ${data.houseCut} ብር<br>
-                        🏆 <b>ለአሸናፊው የሚሰጥ፡</b> <b style="color:#2ecc71; font-size:16px;">${data.netPrize} ብር</b>
-                    `;
-                }
-            }, 3000);
+                alert("የጨዋታውን ውጤት ማግኘት አልተቻለም!");
+            }
         }
     </script>
 </body>
